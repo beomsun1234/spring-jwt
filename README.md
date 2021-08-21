@@ -97,32 +97,35 @@
   - 만약 권한이나 인증이 필요한 주소가 아니라면 필터를 안탄다
   
   
-       //인증이나 권한이 필요한 주소요청이 있을 때 해당 필터를 타게된다
+  
+
+
+             //인증이나 권한이 필요한 주소요청이 있을 때 해당 필터를 타게된다
        
-       @Override
-          protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
-              String jwtHeader = request.getHeader("Authorization");
-              // 헤더가 있는지 확인
-              if( jwtHeader == null || !jwtHeader.startsWith("Bearer")){
-                  chain.doFilter(request,response);
-                  log.info("헤더가 없으면 필터 안타고 리턴");
-                  return;
+           @Override
+              protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
+                  String jwtHeader = request.getHeader("Authorization");
+                  // 헤더가 있는지 확인
+                  if( jwtHeader == null || !jwtHeader.startsWith("Bearer")){
+                      chain.doFilter(request,response);
+                      log.info("헤더가 없으면 필터 안타고 리턴");
+                      return;
+                  }
+                  String jwtToken = jwtHeader.substring(7);
+                  Claims claims = Jwts.parserBuilder()
+                          .setSigningKey(secret.getBytes())
+                          .build()
+                          .parseClaimsJws(jwtToken)
+                          .getBody();
+                  if (claims.get("email",String.class) !=null){
+                      log.info("토큰검증 통과");
+                      User user = userRepository.findByEmail(claims.get("email", String.class)).orElseThrow(()->new IllegalArgumentException("찾는 이메일이 없습니다."));
+                      SecurityUser securityUser = new SecurityUser(user);
+                      //jwt토큰 서명을 통해 서명이 정상이면 Authentication객체를만들어준다
+                      Authentication authentication = new UsernamePasswordAuthenticationToken(securityUser,null,securityUser.getAuthorities());
+                      //강제로 시큐리티의 세션에 접근하여 Authentication 객체를 저장.
+                      SecurityContextHolder.getContext().setAuthentication(authentication);
+                      chain.doFilter(request,response);
+                  }
               }
-              String jwtToken = jwtHeader.substring(7);
-              Claims claims = Jwts.parserBuilder()
-                      .setSigningKey(secret.getBytes())
-                      .build()
-                      .parseClaimsJws(jwtToken)
-                      .getBody();
-              if (claims.get("email",String.class) !=null){
-                  log.info("토큰검증 통과");
-                  User user = userRepository.findByEmail(claims.get("email", String.class)).orElseThrow(()->new IllegalArgumentException("찾는 이메일이 없습니다."));
-                  SecurityUser securityUser = new SecurityUser(user);
-                  //jwt토큰 서명을 통해 서명이 정상이면 Authentication객체를만들어준다
-                  Authentication authentication = new UsernamePasswordAuthenticationToken(securityUser,null,securityUser.getAuthorities());
-                  //강제로 시큐리티의 세션에 접근하여 Authentication 객체를 저장.
-                  SecurityContextHolder.getContext().setAuthentication(authentication);
-                  chain.doFilter(request,response);
-              }
-          }
 
