@@ -1,12 +1,11 @@
 package com.bs.hellojwt.jwt;
 
 import com.bs.hellojwt.auth.SecurityUser;
-import com.bs.hellojwt.controller.dto.LoginForm;
+import com.bs.hellojwt.controller.dto.LoginUserDto;
 import com.bs.hellojwt.controller.dto.UserInfoDto;
+import com.bs.hellojwt.util.CookieUtil;
+import com.bs.hellojwt.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,13 +16,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
 import java.io.PrintWriter;
-import java.util.Date;
 
 
 /**
@@ -38,10 +37,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private final AuthenticationManager authenticationManager;
     private final ObjectMapper objectMapper;
     private final JwtUtil jwtUtil;
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager,ObjectMapper objectMapper, JwtUtil jwtUtil){
+    private final CookieUtil cookieUtil;
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager,ObjectMapper objectMapper, JwtUtil jwtUtil,CookieUtil cookieUtil){
         this.authenticationManager = authenticationManager;
         this.objectMapper = objectMapper;
         this.jwtUtil =  jwtUtil;
+        this.cookieUtil = cookieUtil;
     }
     //@Value("${jwttest.secret-key}")
     private String secret= "qkrqjatjs12345678910111231231232131232131231231231231231232131231231231245";
@@ -59,7 +60,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
          */
         //1
         try {
-            LoginForm loginUser = objectMapper.readValue(request.getInputStream(), LoginForm.class);
+            LoginUserDto loginUser = objectMapper.readValue(request.getInputStream(), LoginUserDto.class);
             log.info("email={}", loginUser.getEmail());
             log.info("pass={}", loginUser.getPassword());
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginUser.getEmail(), loginUser.getPassword());
@@ -76,6 +77,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }
         return null;
     }
+
+    @Override
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
+        log.info("---인증실패했습니다---");
+
+    }
+
     // attemptAuthentication 실행 후 인증이 정상적으로 되었으면 successfulAuthentication 함수가 실행된다
     // jwt 토큰으 ㄹ만들어서 request요청한 사용자에게 jwt토큰을 reponse해주면된다
     @Override
@@ -91,7 +99,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         log.info(" ----토큰발급-------");
         String access_token =jwtUtil.generateToken(userInfo);
         String refresh_token = jwtUtil.generateRefreshToken(userInfo);
-
+        Cookie accesToken = cookieUtil.createCookie(JwtUtil.ACCESS_TOKEN_NAME, access_token);
+        Cookie refreshToken  = cookieUtil.createCookie(JwtUtil.REFRESH_TOKEN_NAME, refresh_token);
+        log.info(" ----토큰발급완료-------");
+        log.info(" ----쿠키에 등록-------");
+        response.addCookie(accesToken);
+        response.addCookie(refreshToken);
         response.addHeader("Authorization", "Bearer "+access_token);
         response.addHeader("refreshToken ", "Bearer "+refresh_token);
         response.setContentType("application/json");

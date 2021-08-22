@@ -1,7 +1,8 @@
-package com.bs.hellojwt.jwt;
+package com.bs.hellojwt.util;
 
 import com.bs.hellojwt.auth.SecurityUser;
 import com.bs.hellojwt.controller.dto.UserInfoDto;
+import com.bs.hellojwt.jwt.TokenDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -13,10 +14,11 @@ import java.util.Date;
 
 @Component
 public class JwtUtil {
-    public final static long TOKEN_VALIDATION_SECOND = 1000L * 10;
+    public final static long TOKEN_VALIDATION_SECOND = 1000L * 60; //10분
     public final static long REFRESH_TOKEN_VALIDATION_SECOND = 1000L * 60 * 24 * 2;
     private String secret= "qkrqjatjs12345678910111231231232131232131231231231231231232131231231231245";
-
+    final static public String ACCESS_TOKEN_NAME = "accessToken";
+    final static public String REFRESH_TOKEN_NAME = "refreshToken";
 
     /**
      * String access_token = Jwts.builder().setSubject("cos_token")
@@ -97,8 +99,8 @@ public class JwtUtil {
     }
 
     public Boolean validateToken(String token, SecurityUser user) {
-        final String emial = getEmail(token);
-        return (user.equals(user.getUsername()) && !isTokenExpired(token));
+        final String email = getEmail(token);
+        return (email.equals(user.getEmail()) && ! isTokenExpired(token));
     }
 
     public TokenDto tokenToDto(String accessToken, String refreshToken){
