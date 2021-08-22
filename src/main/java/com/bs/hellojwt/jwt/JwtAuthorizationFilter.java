@@ -96,6 +96,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                             .email(securityUser.getEmail())
                             .role(securityUser.getUser().getRole())
                             .build();
+
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     String newToken =jwtUtil.generateToken(userInfo);
                 }
