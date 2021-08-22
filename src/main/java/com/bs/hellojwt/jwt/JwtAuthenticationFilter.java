@@ -1,12 +1,12 @@
 package com.bs.hellojwt.jwt;
 
 import com.bs.hellojwt.auth.SecurityUser;
-import com.bs.hellojwt.domain.user.User;
+import com.bs.hellojwt.controller.dto.LoginForm;
+import com.bs.hellojwt.controller.dto.UserInfoDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
+import java.io.PrintWriter;
 import java.util.Date;
 
 
@@ -33,11 +34,17 @@ import java.util.Date;
 
 
 @Slf4j
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final AuthenticationManager authenticationManager;
+    private final ObjectMapper objectMapper;
+    private final JwtUtil jwtUtil;
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager,ObjectMapper objectMapper, JwtUtil jwtUtil){
+        this.authenticationManager = authenticationManager;
+        this.objectMapper = objectMapper;
+        this.jwtUtil =  jwtUtil;
+    }
     //@Value("${jwttest.secret-key}")
-    private String secret = "qkrqjatjs12345678910111231231232131232131231231231231231232131231231231245";
+    private String secret= "qkrqjatjs12345678910111231231232131232131231231231231231232131231231231245";
     /**
      * /login 요청오면 실행되는 함수
      */
@@ -52,27 +59,16 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
          */
         //1
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            User user = objectMapper.readValue(request.getInputStream(), User.class);
-            log.info("username={}", user.getName());
-            log.info("email={}", user.getEmail());
-            log.info("pass={}", user.getPassword());
-            String s = this.obtainPassword(request);
-            log.info("pass={}", s);
-            if (s == null) {
-                s = "";
-            }
-
-            UsernamePasswordAuthenticationToken newAuthentication = new UsernamePasswordAuthenticationToken(
-                    user, user.getPassword());
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword());
+            LoginForm loginUser = objectMapper.readValue(request.getInputStream(), LoginForm.class);
+            log.info("email={}", loginUser.getEmail());
+            log.info("pass={}", loginUser.getPassword());
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginUser.getEmail(), loginUser.getPassword());
             //  CustomUserDetailsService의 loadByUsername() 함수가 실행된다(나는 email로 호출한다)
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
             // authentication 객체가 세션영역에 저장됨 => 로그인이 되었다는 뜻
-            SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
-
+            //SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
             log.info("-----------로그인완료됨");
-            log.info("email={}", securityUser.getEmail());
+            //log.info("email={}", securityUser.getEmail());
             return authentication;
 
         } catch (IOException e) {
@@ -84,18 +80,27 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     // jwt 토큰으 ㄹ만들어서 request요청한 사용자에게 jwt토큰을 reponse해주면된다
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        log.info("인증이완료되었습니다---- 토큰발급");
-
+        log.info("인증이완료되었습니다---");
         SecurityUser user = (SecurityUser)authResult.getPrincipal();
-        log.info("screct={}",secret);
-        String jwtToken = Jwts.builder().setSubject("cos_token")
-                .setExpiration(new Date(System.currentTimeMillis()+(60000*10)))
-                .claim("id",user.getUser().getId())
-                .claim("email", user.getEmail())
-                .claim("name", user.getUsername())
-                .signWith(SignatureAlgorithm.HS256, secret.getBytes())
-                .compact();
-        response.addHeader("Authorization", "Bearer "+jwtToken);
+        UserInfoDto userInfo = UserInfoDto.builder()
+                .id(user.getUser().getId())
+                .name(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getUser().getRole())
+                .build();
+        log.info(" ----토큰발급-------");
+        String access_token =jwtUtil.generateToken(userInfo);
+        String refresh_token = jwtUtil.generateRefreshToken(userInfo);
+
+        response.addHeader("Authorization", "Bearer "+access_token);
+        response.addHeader("refreshToken ", "Bearer "+refresh_token);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        PrintWriter printWriter = response.getWriter();
+        printWriter.print(objectMapper.writeValueAsString(jwtUtil.tokenToDto(access_token,refresh_token)));
+        printWriter.flush();
+
     }
     /**
      * 이메일 ,패스워드 로그인 정상

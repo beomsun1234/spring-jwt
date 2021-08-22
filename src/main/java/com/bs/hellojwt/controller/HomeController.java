@@ -1,14 +1,13 @@
 package com.bs.hellojwt.controller;
 
 
-import com.bs.hellojwt.domain.user.LoginForm;
+import com.bs.hellojwt.controller.dto.UserJoinDto;
 import com.bs.hellojwt.domain.user.Role;
 import com.bs.hellojwt.domain.user.User;
 import com.bs.hellojwt.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,7 +29,7 @@ public class HomeController {
         return "<h1>token</h1>";
     }
     @PostMapping("/v1/join")
-    public User join(@RequestBody LoginForm user){
+    public User join(@RequestBody UserJoinDto user){
         log.info("회원가입진행");
         log.info("pass={}",user.getPassword());
         String password = bCryptPasswordEncoder.encode(user.getPassword());

@@ -1,10 +1,9 @@
-package com.bs.hellojwt.domain.user;
+package com.bs.hellojwt.controller.dto;
 
 import lombok.Data;
 
 @Data
 public class LoginForm {
-    private String name;
 
     private String email;
 

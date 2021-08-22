@@ -3,6 +3,8 @@ package com.bs.hellojwt.config;
 import com.bs.hellojwt.domain.user.UserRepository;
 import com.bs.hellojwt.jwt.JwtAuthenticationFilter;
 import com.bs.hellojwt.jwt.JwtAuthorizationFilter;
+import com.bs.hellojwt.jwt.JwtUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,12 +18,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
+    private final ObjectMapper objectMapper;
     //private final Myfilter1 myfilter1;
     @Bean
     public BCryptPasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
@@ -30,8 +34,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .formLogin().disable()
                 .httpBasic().disable()
-                .addFilter(new JwtAuthenticationFilter(authenticationManager()))
-                .addFilter(new JwtAuthorizationFilter(authenticationManager(),userRepository))
+                .addFilter(new JwtAuthenticationFilter(authenticationManager(),objectMapper,jwtUtil))
+                .addFilter(new JwtAuthorizationFilter(authenticationManager(),userRepository,jwtUtil))
                 .authorizeRequests()
                 .antMatchers("/api/v1/user/**")
                 .access("hasRole('ROLE_USER') or hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")
