@@ -48,9 +48,9 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
         Cookie cookie = cookieUtil.getCookie(request, JwtUtil.ACCESS_TOKEN_NAME);
-        //String jwtHeader = request.getHeader("Authorization");
-        //String header = request.getHeader("refreshToken"); //
-        //log.info("header={}",header);
+        String jwtHeader = request.getHeader("Authorization");
+        String header = request.getHeader("refreshToken"); //
+        log.info("header={}",header);
         String refreshToken =null;
         // 헤더가 있는지 확인
         if( cookie == null){
@@ -58,12 +58,16 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             log.info("헤더에 jwt토큰 없음");
             return;
         }
+        /**
+         * test용도이다 밑에는
+         */
 //        if( jwtHeader == null || !jwtHeader.startsWith("Bearer")){
 //            chain.doFilter(request,response);
 //            log.info("헤더에 jwt토큰 없음");
 //            return;
 //        }
         try {
+            //String jwtToken = jwtHeader.substring(7); --테스트용
             String jwtToken = cookie.getValue();
             String email = jwtUtil.getEmail(jwtToken);
             if (email != null){

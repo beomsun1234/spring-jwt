@@ -14,7 +14,7 @@ import java.util.Date;
 
 @Component
 public class JwtUtil {
-    public final static long TOKEN_VALIDATION_SECOND = 1000L * 60; //10분
+    public final static long TOKEN_VALIDATION_SECOND = 1000L * 60* 10; //10분  ////1000L * 3 -> 3초(test용)
     public final static long REFRESH_TOKEN_VALIDATION_SECOND = 1000L * 60 * 24 * 2;
     private String secret= "qkrqjatjs12345678910111231231232131232131231231231231231232131231231231245";
     final static public String ACCESS_TOKEN_NAME = "accessToken";
