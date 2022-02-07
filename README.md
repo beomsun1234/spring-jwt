@@ -17,47 +17,47 @@
           굳이 jwt토큰을 사용하면서 세션을 만들 이유가 없다. 이유는 권한 처리떄문에 세션에 넣어준다.
           
          
-         public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
-             private final AuthenticationManager authenticationManager;
-             //@Value("${jwttest.secret-key}")
-             private String secret = "qkrqjatjs12345678910111231231232131232131231231231231231232131231231231245";
-             /**
-              * /login 요청오면 실행되는 함수
-              */
-             @Override
-             public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-                 log.info("로그인시도중");
-                 /**
-                  * 1.useremail, password 받아서
-                  * 2.정상인지 로그인시도 해봄. authenticationManager로 로그인시도를 하면 CustomUserDetailsService가 호출된다
-                  * 3. securityUser를 세션에 담고
-                  * 4. jwt 토큰을 만들어 응답
-                  */
-                 //1
-                 try {
-                     ObjectMapper objectMapper = new ObjectMapper();
-                     User user = objectMapper.readValue(request.getInputStream(), User.class);
-                     log.info("username={}", user.getName());
-                     log.info("email={}", user.getEmail());
-                     log.info("pass={}", user.getPassword());           
-                     
-                     UsernamePasswordAuthenticationToken newAuthentication = new UsernamePasswordAuthenticationToken(
-                             user, user.getPassword());
-                     UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword());
-                     //  CustomUserDetailsService의 loadByUsername() 함수가 실행된다(나는 email로 호출한다)
-                     Authentication authentication = authenticationManager.authenticate(authenticationToken);
-                     // authentication 객체가 세션영역에 저장됨 => 로그인이 되었다는 뜻
-                     SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
-         
-                     log.info("-----------로그인완료됨");
-                     log.info("email={}", securityUser.getEmail());
-                     return authentication;
-         
-                 } catch (IOException e) {
-                     e.printStackTrace();
-                 }
-                 return null;
-             }
+            public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+                private final AuthenticationManager authenticationManager;
+                //@Value("${jwttest.secret-key}")
+                private String secret = "qkrqjatjs12345678910111231231232131232131231231231231231232131231231231245";
+                /**
+                 * /login 요청오면 실행되는 함수
+                 */
+                @Override
+                public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+                    log.info("로그인시도중");
+                    /**
+                     * 1.useremail, password 받아서
+                     * 2.정상인지 로그인시도 해봄. authenticationManager로 로그인시도를 하면 CustomUserDetailsService가 호출된다
+                     * 3. securityUser를 세션에 담고
+                     * 4. jwt 토큰을 만들어 응답
+                     */
+                    //1
+                    try {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        User user = objectMapper.readValue(request.getInputStream(), User.class);
+                        log.info("username={}", user.getName());
+                        log.info("email={}", user.getEmail());
+                        log.info("pass={}", user.getPassword());           
+
+                        UsernamePasswordAuthenticationToken newAuthentication = new UsernamePasswordAuthenticationToken(
+                                user, user.getPassword());
+                        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword());
+                        //  CustomUserDetailsService의 loadByUsername() 함수가 실행된다(나는 email로 호출한다)
+                        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+                        // authentication 객체가 세션영역에 저장됨 => 로그인이 되었다는 뜻
+                        SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+
+                        log.info("-----------로그인완료됨");
+                        log.info("email={}", securityUser.getEmail());
+                        return authentication;
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                }
           
           
  (로그인완료 후)<br>
